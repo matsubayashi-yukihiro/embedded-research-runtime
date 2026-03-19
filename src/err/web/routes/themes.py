@@ -21,14 +21,18 @@ def _themes_dir(request: Request) -> Path:
     return request.app.state.themes_dir
 
 
-@router.get("/", response_class=HTMLResponse)
-async def theme_list(request: Request):
+def _get_sidebar_tree(request: Request) -> list:
     themes_dir = _themes_dir(request)
     flat = ThemeStore.list(themes_dir)
-    tree = ThemeResolver.build_tree(flat)
+    return ThemeResolver.build_tree(flat)
+
+
+@router.get("/", response_class=HTMLResponse)
+async def theme_list(request: Request):
     templates = _get_templates(request)
     return templates.TemplateResponse(
-        "theme_list.html", {"request": request, "themes": tree}
+        "theme_list.html",
+        {"request": request, "sidebar_themes": _get_sidebar_tree(request)},
     )
 
 
@@ -48,7 +52,7 @@ async def theme_edit_form(request: Request, slug: str):
     templates = _get_templates(request)
     return templates.TemplateResponse(
         "project_edit.html",
-        {"request": request, "theme": theme, "doc": doc},
+        {"request": request, "theme": theme, "doc": doc, "sidebar_themes": _get_sidebar_tree(request)},
     )
 
 
@@ -115,9 +119,11 @@ async def theme_view(request: Request, slug: str):
     # Run records
     runs = RunStore.list(theme.path)
 
-    # Render Markdown body
+    # Render Markdown body with math support
     from markdown_it import MarkdownIt
+    from mdit_py_plugins.dollarmath import dollarmath_plugin
     md = MarkdownIt()
+    dollarmath_plugin(md, allow_labels=True, allow_space=True, allow_digits=False)
     body_html = md.render(doc.body)
 
     # Breadcrumbs: list of (label, url)
@@ -134,6 +140,7 @@ async def theme_view(request: Request, slug: str):
             "children": children,
             "breadcrumbs": breadcrumbs,
             "runs": runs,
+            "sidebar_themes": _get_sidebar_tree(request),
         },
     )
 

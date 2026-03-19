@@ -17,3 +17,11 @@ class ThemeInfo(BaseModel):
         if self.parent_slug:
             return f"{self.parent_slug}/{self.slug}"
         return self.slug
+
+    @property
+    def run_files(self) -> list[str]:
+        """Return sorted YAML filenames from runs/ dir."""
+        runs_dir = self.path / "runs"
+        if not runs_dir.is_dir():
+            return []
+        return sorted(f.name for f in runs_dir.glob("*.yaml"))

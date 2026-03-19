@@ -1,0 +1,31 @@
+{% macro render_sidebar_theme(theme) %}
+<details class="sidebar-theme" open>
+  <summary class="sidebar-theme-summary">
+    <a href="/themes/{{ theme.full_slug }}">{{ theme.slug }}</a>
+  </summary>
+  <div class="sidebar-theme-body">
+    <a class="sidebar-file sidebar-file--md" href="/themes/{{ theme.full_slug }}">project.md</a>
+    {% if theme.run_files %}
+      <details class="sidebar-runs" open>
+        <summary class="sidebar-runs-summary">runs/</summary>
+        <ul class="sidebar-run-list">
+          {% for fname in theme.run_files %}
+            <li class="sidebar-run-file">{{ fname }}</li>
+          {% endfor %}
+        </ul>
+      </details>
+    {% endif %}
+    {% for child in theme.children %}
+      {{ render_sidebar_theme(child) }}
+    {% endfor %}
+  </div>
+</details>
+{% endmacro %}
+
+{% if sidebar_themes %}
+  {% for theme in sidebar_themes %}
+    {{ render_sidebar_theme(theme) }}
+  {% endfor %}
+{% else %}
+  <p class="sidebar-empty">テーマなし</p>
+{% endif %}
