@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}編集: {{ doc.frontmatter.title }} — ERR{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb">
+  <a href="/">ホーム</a> <span class="breadcrumb-sep">/</span>
+  <a href="/themes/{{ theme.full_slug }}">{{ theme.slug }}</a> <span class="breadcrumb-sep">/</span>
+  <span class="breadcrumb-current">編集</span>
+</nav>
+
+<h1>編集: {{ theme.slug }}</h1>
+
+<form method="post" action="/themes/{{ theme.full_slug }}/edit" class="edit-form">
+  <div class="form-group">
+    <label for="title">タイトル</label>
+    <input type="text" id="title" name="title" value="{{ doc.frontmatter.title }}" required>
+  </div>
+
+  <div class="form-group">
+    <label for="status">ステータス</label>
+    <select id="status" name="status">
+      {% for s in ["active", "paused", "closed"] %}
+        <option value="{{ s }}" {% if doc.frontmatter.status == s %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="current_question">現在の問い</label>
+    <input type="text" id="current_question" name="current_question" value="{{ doc.frontmatter.current_question }}">
+  </div>
+
+  <div class="form-group">
+    <label for="open_items_raw">保留事項（1行1項目）</label>
+    <textarea id="open_items_raw" name="open_items_raw" rows="4">{{ doc.frontmatter.open_items | join('\n') }}</textarea>
+  </div>
+
+  <div class="form-group">
+    <label for="comparing_themes_raw">比較中テーマ（1行1項目）</label>
+    <textarea id="comparing_themes_raw" name="comparing_themes_raw" rows="3">{{ doc.frontmatter.comparing_themes | join('\n') }}</textarea>
+  </div>
+
+  <div class="form-group">
+    <label for="body">Markdown 本文</label>
+    <textarea id="body" name="body" rows="20">{{ doc.body }}</textarea>
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">保存</button>
+    <a href="/themes/{{ theme.full_slug }}" class="btn">キャンセル</a>
+  </div>
+</form>
+{% endblock %}

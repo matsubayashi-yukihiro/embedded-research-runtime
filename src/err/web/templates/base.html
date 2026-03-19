@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ERR{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a href="/" class="site-logo">ERR</a>
+    <span class="site-tagline">Embedded Research Runtime</span>
+  </header>
+  <main class="site-main">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

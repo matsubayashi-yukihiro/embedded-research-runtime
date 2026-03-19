@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{{ doc.frontmatter.title }} — ERR{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb">
+  {% for label, url in breadcrumbs %}
+    {% if not loop.last %}
+      <a href="{{ url }}">{{ label }}</a> <span class="breadcrumb-sep">/</span>
+    {% else %}
+      <span class="breadcrumb-current">{{ label }}</span>
+    {% endif %}
+  {% endfor %}
+</nav>
+
+<div class="theme-page">
+  <header class="theme-header">
+    <div class="theme-header-left">
+      <h1>{{ doc.frontmatter.title }}</h1>
+      <span class="status-badge status-{{ doc.frontmatter.status }}">{{ doc.frontmatter.status }}</span>
+    </div>
+    <a href="/themes/{{ theme.full_slug }}/edit" class="btn">編集</a>
+  </header>
+
+  <div class="theme-body">
+    <aside class="theme-sidebar">
+      {% if doc.frontmatter.current_question %}
+        <section class="sidebar-section">
+          <h3>現在の問い</h3>
+          <p>{{ doc.frontmatter.current_question }}</p>
+        </section>
+      {% endif %}
+
+      {% if doc.frontmatter.open_items %}
+        <section class="sidebar-section">
+          <h3>保留事項</h3>
+          <ul>
+            {% for item in doc.frontmatter.open_items %}
+              <li>{{ item }}</li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+
+      {% if doc.frontmatter.comparing_themes %}
+        <section class="sidebar-section">
+          <h3>比較中テーマ</h3>
+          <ul>
+            {% for t in doc.frontmatter.comparing_themes %}
+              <li>{{ t }}</li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+
+      {% if doc.frontmatter.next_runs %}
+        <section class="sidebar-section">
+          <h3>次の実行候補</h3>
+          <ul>
+            {% for run in doc.frontmatter.next_runs %}
+              <li>{{ run.description if run.description else run }}</li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+    </aside>
+
+    <article class="theme-content prose">
+      {{ body_html | safe }}
+    </article>
+  </div>
+
+  {% if children %}
+    <section class="subthemes">
+      <h2>サブテーマ</h2>
+      <ul class="theme-tree">
+        {% for child in children %}
+          <li class="theme-item">
+            <a href="/themes/{{ child.full_slug }}" class="theme-title">{{ child.slug }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}
