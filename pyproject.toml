@@ -12,6 +12,8 @@ dependencies = [
     "pydantic>=2.7",
     "python-frontmatter>=1.1",
     "markdown-it-py>=3.0",
+    "python-multipart>=0.0.22",
+    "watchfiles>=1.1.1",
 ]
 
 [project.scripts]

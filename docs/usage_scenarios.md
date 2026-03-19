@@ -6,6 +6,34 @@
 
 ---
 
+## ERR のインストール
+
+ERR は Python パッケージとして提供される。`uv` を使ってインストールする。
+
+```bash
+# リポジトリを取得
+git clone <ERR_REPO_URL>
+cd embedded-research-runtime
+
+# 仮想環境の作成と依存関係のインストール
+uv sync
+```
+
+これ以降、`err` コマンドは以下のいずれかで実行できる。
+
+```bash
+# 方法 A: uv run 経由（仮想環境の有効化不要、推奨）
+uv run err --help
+
+# 方法 B: 仮想環境を有効化してから実行
+source .venv/bin/activate
+err --help
+```
+
+**ポイント**: `uv run err <cmd>` はどのディレクトリからでも動作するが、ERR のデータ（`.err/`）は **実行時のカレントディレクトリ** に作られる。研究リポジトリのルートで実行すること。
+
+---
+
 ## 前提となる状況
 
 あなたは流体シミュレーションの研究者で、`~/cfd-platform/` という研究リポジトリを持っている。

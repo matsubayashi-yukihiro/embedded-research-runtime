@@ -14,5 +14,23 @@
   <main class="site-main">
     {% block content %}{% endblock %}
   </main>
+  {% if dev_mode %}
+  <script>
+    (function () {
+      const es = new EventSource("/dev/livereload");
+      es.addEventListener("reload", () => location.reload());
+      es.onerror = () => {
+        es.close();
+        // サーバー再起動後に再接続を試みてリロード
+        const retry = setInterval(() => {
+          fetch("/dev/livereload", { method: "HEAD" })
+            .then(() => { clearInterval(retry); location.reload(); })
+            .catch(() => {});
+        }, 500);
+      };
+    })();
+  </script>
+  {% endif %}
 </body>
 </html>
+

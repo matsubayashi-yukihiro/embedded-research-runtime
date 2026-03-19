@@ -67,14 +67,29 @@ def _print_tree(themes, indent: int) -> None:
 def serve(
     host: str = typer.Option("127.0.0.1", help="バインドホスト"),
     port: int = typer.Option(8765, help="ポート番号"),
+    dev: bool = typer.Option(False, "--dev", help="開発モード（ファイル変更時に自動リロード）"),
 ):
     """Web UI を起動する (localhost:8765)。"""
     ctx = _require_context()
     themes_dir = ctx.themes_dir()
 
-    from err.web.app import create_app
-    web_app = create_app(themes_dir)
-
     typer.echo(f"ERR Web UI を起動中: http://{host}:{port}")
     typer.echo(f"テーマディレクトリ: {themes_dir}")
-    uvicorn.run(web_app, host=host, port=port)
+    if dev:
+        typer.echo("開発モード: ファイル変更時にブラウザが自動リロードされます")
+
+    if dev:
+        import os
+        os.environ["ERR_THEMES_DIR"] = str(themes_dir)
+        uvicorn.run(
+            "err.web._dev:create_app",
+            factory=True,
+            host=host,
+            port=port,
+            reload=True,
+            reload_dirs=["src/err"],
+        )
+    else:
+        from err.web.app import create_app
+        web_app = create_app(themes_dir)
+        uvicorn.run(web_app, host=host, port=port)

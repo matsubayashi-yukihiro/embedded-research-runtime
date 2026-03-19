@@ -1,19 +1,6 @@
 {% extends "base.html" %}
 {% block title %}テーマ一覧 — ERR{% endblock %}
 
-{% block content %}
-<h1>テーマ一覧</h1>
-
-{% if not themes %}
-  <p class="empty-state">テーマがありません。<code>err init &lt;theme-name&gt;</code> でテーマを作成してください。</p>
-{% else %}
-  <ul class="theme-tree">
-    {% for theme in themes %}
-      {{ render_theme(theme) }}
-    {% endfor %}
-  </ul>
-{% endif %}
-
 {% macro render_theme(theme) %}
   <li class="theme-item">
     <div class="theme-summary">
@@ -28,4 +15,17 @@
     {% endif %}
   </li>
 {% endmacro %}
+
+{% block content %}
+<h1>テーマ一覧</h1>
+
+{% if not themes %}
+  <p class="empty-state">テーマがありません。<code>err init &lt;theme-name&gt;</code> でテーマを作成してください。</p>
+{% else %}
+  <ul class="theme-tree">
+    {% for theme in themes %}
+      {{ render_theme(theme) }}
+    {% endfor %}
+  </ul>
+{% endif %}
 {% endblock %}
