@@ -25,6 +25,8 @@ def create_app(themes_dir: Path, dev: bool = False) -> FastAPI:
 
     app.state.themes_dir = themes_dir
     app.state.dev_mode = dev
+    app.state.sidebar_cache = None   # (mtime: float, tree: list, flat: list) | None
+    app.state.render_cache = {}      # (path_str, mtime_float) -> html_str
 
     templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
     templates.env.globals["dev_mode"] = dev

@@ -3,6 +3,8 @@ from pathlib import Path
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from markdown_it import MarkdownIt
+from mdit_py_plugins.dollarmath import dollarmath_plugin
 
 from err.core.theme import ThemeNotFoundError, ThemeResolver
 from err.models.project import ProjectFrontmatter
@@ -11,6 +13,9 @@ from err.storage.run_store import RunStore
 from err.storage.theme_store import ThemeStore
 
 router = APIRouter()
+
+_md = MarkdownIt()
+dollarmath_plugin(_md, allow_labels=True, allow_space=True, allow_digits=False)
 
 
 def _get_templates(request: Request) -> Jinja2Templates:
@@ -21,18 +26,55 @@ def _themes_dir(request: Request) -> Path:
     return request.app.state.themes_dir
 
 
-def _get_sidebar_tree(request: Request) -> list:
+def _get_themes_cached(request: Request) -> tuple[list, list]:
+    """Return (sidebar_tree, flat_list). Re-walks only if themes_dir mtime changed."""
     themes_dir = _themes_dir(request)
+    try:
+        mtime = themes_dir.stat().st_mtime
+    except FileNotFoundError:
+        mtime = 0.0
+
+    cache = request.app.state.sidebar_cache
+    if cache is not None and cache[0] == mtime:
+        return cache[1], cache[2]
+
     flat = ThemeStore.list(themes_dir)
-    return ThemeResolver.build_tree(flat)
+    tree = ThemeResolver.build_tree(flat)
+    request.app.state.sidebar_cache = (mtime, tree, flat)
+    return tree, flat
+
+
+def _invalidate_sidebar_cache(request: Request) -> None:
+    request.app.state.sidebar_cache = None
+
+
+def _render_body(request: Request, theme_path: Path, body: str) -> str:
+    """Render Markdown body HTML, caching by project.md mtime."""
+    project_md_path = theme_path / "project.md"
+    try:
+        mtime = project_md_path.stat().st_mtime
+    except FileNotFoundError:
+        return _md.render(body)
+
+    cache_key = (str(project_md_path), mtime)
+    render_cache = request.app.state.render_cache
+
+    if cache_key not in render_cache:
+        stale = [k for k in render_cache if k[0] == str(project_md_path)]
+        for k in stale:
+            del render_cache[k]
+        render_cache[cache_key] = _md.render(body)
+
+    return render_cache[cache_key]
 
 
 @router.get("/", response_class=HTMLResponse)
 async def theme_list(request: Request):
+    sidebar_themes, _ = _get_themes_cached(request)
     templates = _get_templates(request)
     return templates.TemplateResponse(
         "theme_list.html",
-        {"request": request, "sidebar_themes": _get_sidebar_tree(request)},
+        {"request": request, "sidebar_themes": sidebar_themes},
     )
 
 
@@ -49,10 +91,11 @@ async def theme_edit_form(request: Request, slug: str):
         theme_slug=theme.slug,
         parent_slug=theme.parent_slug,
     )
+    sidebar_themes, _ = _get_themes_cached(request)
     templates = _get_templates(request)
     return templates.TemplateResponse(
         "project_edit.html",
-        {"request": request, "theme": theme, "doc": doc, "sidebar_themes": _get_sidebar_tree(request)},
+        {"request": request, "theme": theme, "doc": doc, "sidebar_themes": sidebar_themes},
     )
 
 
@@ -94,6 +137,7 @@ async def theme_edit_save(
     )
     doc.body = body
     ProjectStore.save(doc)
+    _invalidate_sidebar_cache(request)
 
     return RedirectResponse(url=f"/themes/{slug}", status_code=303)
 
@@ -112,21 +156,13 @@ async def theme_view(request: Request, slug: str):
         parent_slug=theme.parent_slug,
     )
 
-    # Sub-themes
-    flat = ThemeStore.list(themes_dir)
+    sidebar_themes, flat = _get_themes_cached(request)
     children = [t for t in flat if t.parent_slug == theme.full_slug]
 
-    # Run records
     runs = RunStore.list(theme.path)
 
-    # Render Markdown body with math support
-    from markdown_it import MarkdownIt
-    from mdit_py_plugins.dollarmath import dollarmath_plugin
-    md = MarkdownIt()
-    dollarmath_plugin(md, allow_labels=True, allow_space=True, allow_digits=False)
-    body_html = md.render(doc.body)
+    body_html = _render_body(request, theme.path, doc.body)
 
-    # Breadcrumbs: list of (label, url)
     breadcrumbs = _build_breadcrumbs(slug)
 
     templates = _get_templates(request)
@@ -140,7 +176,7 @@ async def theme_view(request: Request, slug: str):
             "children": children,
             "breadcrumbs": breadcrumbs,
             "runs": runs,
-            "sidebar_themes": _get_sidebar_tree(request),
+            "sidebar_themes": sidebar_themes,
         },
     )
 
