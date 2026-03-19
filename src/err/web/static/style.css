@@ -88,6 +88,20 @@ a:hover { text-decoration: underline; }
 .subthemes { border-top: 1px solid #e5e5e5; padding-top: 1rem; }
 .subthemes h2 { font-size: 1rem; margin-bottom: 0.5rem; }
 
+/* ── Run records ── */
+.runs { border-top: 1px solid #e5e5e5; padding-top: 1rem; }
+.runs h2 { font-size: 1rem; margin-bottom: 0.75rem; }
+.runs-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.runs-table th { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 2px solid #e5e5e5; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: #888; }
+.runs-table td { padding: 0.5rem 0.6rem; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+.run-date { white-space: nowrap; color: #666; }
+.run-params { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.param-tag { background: #ebebeb; border-radius: 3px; padding: 0.1em 0.4em; font-size: 0.82em; font-family: monospace; }
+.run-notes { color: #666; font-size: 0.85em; }
+.status-completed { background: #d1fae5; color: #065f46; }
+.status-failed    { background: #fee2e2; color: #991b1b; }
+.status-partial   { background: #fef3c7; color: #92400e; }
+
 /* ── Buttons ── */
 .btn {
   display: inline-block;

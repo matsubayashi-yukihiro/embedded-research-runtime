@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -6,9 +7,13 @@ import uvicorn
 
 from err.core.context import ErrContext, ErrNotFoundError
 from err.core.theme import ThemeNotFoundError, ThemeResolver
+from err.models.run import RunRecord
+from err.storage.run_store import RunStore
 from err.storage.theme_store import ThemeStore
 
 app = typer.Typer(help="ERR — Embedded Research Runtime")
+run_app = typer.Typer(help="実行記録の管理")
+app.add_typer(run_app, name="run")
 
 
 def _require_context() -> ErrContext:
@@ -61,6 +66,69 @@ def _print_tree(themes, indent: int) -> None:
         typer.echo(f"{prefix}{theme.slug}")
         if theme.children:
             _print_tree(theme.children, indent + 1)
+
+
+@run_app.command("log")
+def run_log(
+    theme: str = typer.Argument(..., help="テーマスラッグ（例: turbulence-study）"),
+    description: str = typer.Option(..., "--desc", "-d", help="実行の説明"),
+    param: list[str] = typer.Option([], "--param", "-p", help="パラメータ key=value（複数可）"),
+    status: str = typer.Option("completed", "--status", "-s", help="completed | failed | partial"),
+    notes: str = typer.Option("", "--notes", "-n", help="メモ"),
+):
+    """実行記録をテーマに登録する。"""
+    ctx = _require_context()
+    try:
+        theme_info = ThemeResolver.find_by_slug(ctx.themes_dir(), theme)
+    except ThemeNotFoundError:
+        typer.echo(f"テーマが見つかりません: {theme}", err=True)
+        raise typer.Exit(code=1)
+
+    params: dict = {}
+    for p in param:
+        if "=" not in p:
+            typer.echo(f"パラメータの形式が不正です（key=value 形式で指定）: {p}", err=True)
+            raise typer.Exit(code=1)
+        k, v = p.split("=", 1)
+        params[k.strip()] = v.strip()
+
+    record = RunRecord(
+        id=RunStore.create_id(),
+        recorded_at=datetime.now(tz=timezone.utc),
+        description=description,
+        params=params,
+        status=status,
+        notes=notes,
+    )
+    path = RunStore.save(theme_info.path, record)
+    typer.echo(f"実行記録を登録しました: {path}")
+
+
+@run_app.command("list")
+def run_list(
+    theme: str = typer.Argument(..., help="テーマスラッグ"),
+):
+    """テーマの実行記録を一覧表示する。"""
+    ctx = _require_context()
+    try:
+        theme_info = ThemeResolver.find_by_slug(ctx.themes_dir(), theme)
+    except ThemeNotFoundError:
+        typer.echo(f"テーマが見つかりません: {theme}", err=True)
+        raise typer.Exit(code=1)
+
+    records = RunStore.list(theme_info.path)
+    if not records:
+        typer.echo("実行記録がありません。")
+        return
+    for r in records:
+        dt = r.recorded_at.strftime("%Y-%m-%d %H:%M")
+        params_str = ", ".join(f"{k}={v}" for k, v in r.params.items())
+        line = f"[{dt}] [{r.status}] {r.description}"
+        if params_str:
+            line += f"  ({params_str})"
+        typer.echo(line)
+        if r.notes:
+            typer.echo(f"    → {r.notes}")
 
 
 @app.command("serve")

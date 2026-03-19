@@ -81,5 +81,37 @@
       </ul>
     </section>
   {% endif %}
+
+  {% if runs %}
+    <section class="runs">
+      <h2>実行記録</h2>
+      <table class="runs-table">
+        <thead>
+          <tr>
+            <th>日時</th>
+            <th>ステータス</th>
+            <th>説明</th>
+            <th>パラメータ</th>
+            <th>メモ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for run in runs %}
+            <tr class="run-row run-{{ run.status }}">
+              <td class="run-date">{{ run.recorded_at.strftime("%Y-%m-%d %H:%M") }}</td>
+              <td><span class="status-badge status-{{ run.status }}">{{ run.status }}</span></td>
+              <td>{{ run.description }}</td>
+              <td class="run-params">
+                {% for k, v in run.params.items() %}
+                  <span class="param-tag">{{ k }}={{ v }}</span>
+                {% endfor %}
+              </td>
+              <td class="run-notes">{{ run.notes }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  {% endif %}
 </div>
 {% endblock %}

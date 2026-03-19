@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from err.core.theme import ThemeNotFoundError, ThemeResolver
 from err.models.project import ProjectFrontmatter
 from err.storage.project_store import ProjectStore
+from err.storage.run_store import RunStore
 from err.storage.theme_store import ThemeStore
 
 router = APIRouter()
@@ -111,6 +112,9 @@ async def theme_view(request: Request, slug: str):
     flat = ThemeStore.list(themes_dir)
     children = [t for t in flat if t.parent_slug == theme.full_slug]
 
+    # Run records
+    runs = RunStore.list(theme.path)
+
     # Render Markdown body
     from markdown_it import MarkdownIt
     md = MarkdownIt()
@@ -129,6 +133,7 @@ async def theme_view(request: Request, slug: str):
             "body_html": body_html,
             "children": children,
             "breadcrumbs": breadcrumbs,
+            "runs": runs,
         },
     )
 
